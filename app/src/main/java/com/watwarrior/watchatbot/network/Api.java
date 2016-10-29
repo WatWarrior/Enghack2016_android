@@ -11,7 +11,7 @@ import retrofit2.http.Query;
 
 public interface Api {
     @GET("buildings/{building_code}.{format}")
-    Call<BuildingResponse> getBuildingInfo(
+    Call<MyResponse> getBuildingInfo(
             @Path("building_code") String building_code,
             @Path("format") String format,
             @Query("key") String apiKey);

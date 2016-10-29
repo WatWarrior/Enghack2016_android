@@ -32,6 +32,7 @@ public class NetworkHelper {
     private final Context mContext;
 
     public NetworkHelper(Context context) {
+        mContext = context;
         ExclusionStrategy metaExclusionStrategy = new ExclusionStrategy() {
             @Override
             public boolean shouldSkipField(FieldAttributes f) {
@@ -44,26 +45,27 @@ public class NetworkHelper {
             }
         };
 
-        Gson gson = new GsonBuilder().addDeserializationExclusionStrategy(metaExclusionStrategy)
+        Gson gson = new GsonBuilder()
+                .addDeserializationExclusionStrategy(metaExclusionStrategy)
                 .create();
 
         mRetrofit = new Retrofit.Builder()
                 .baseUrl(API_URL)
                 .addConverterFactory(GsonConverterFactory.create(gson))
                 .build();
+
         mApi = mRetrofit.create(Api.class);
-        mContext = context;
     }
 
     public BuildingResponse getBuildingInfo(String building_code){
-        Call<BuildingResponse> buildingCall = mApi.getBuildingInfo(building_code, FORMAT_JSON,
+        Call<MyResponse> buildingCall = mApi.getBuildingInfo(building_code, FORMAT_JSON,
                 mContext.getString(R.string.uwApiKey));
 
         BuildingResponse buildingResponse= null;
 
         try{
-            Response<BuildingResponse> response = buildingCall.execute();
-            buildingResponse = response.body();
+            Response<MyResponse> response = buildingCall.execute();
+            buildingResponse = response.body().mBuildingResponse;
         } catch (IOException e) {
             e.printStackTrace();
         }

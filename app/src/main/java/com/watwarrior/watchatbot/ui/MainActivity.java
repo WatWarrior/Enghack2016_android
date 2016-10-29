@@ -109,6 +109,8 @@ public class MainActivity extends FragmentActivity {
                     } catch (IOException e) {
                         e.printStackTrace();
                         mChatAdapter.addMessage(new TextChatMessage("Bot", "Sorry, my brain exploded."));
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
                 }
             }
@@ -143,9 +145,9 @@ public class MainActivity extends FragmentActivity {
             }
         }
 
-        if(topIntent.getName().equals(LUISIntentDictionary.INTENT_uWaterlooLocation)){
-            for (final LUISEntity entity: entities){
-                if (entity.getType().equals(LUISIntentDictionary.TYPE_location)){
+        if (topIntent.getName().equals(LUISIntentDictionary.INTENT_uWaterlooLocation)) {
+            for (final LUISEntity entity : entities) {
+                if (entity.getType().equals(LUISIntentDictionary.TYPE_location)) {
                     BuildingTask task = new BuildingTask(entity.getName());
                     task.execute();
                     break;
@@ -203,8 +205,19 @@ public class MainActivity extends FragmentActivity {
         }
 
         public void addMessage(AbstractChatMessage message) {
+            if (message instanceof MapChatMessage) {
+                for (AbstractChatMessage m : mMessages) {
+                    if (m instanceof MapChatMessage) {
+                        mMessages.remove(m);
+                        mMessages.add(0, message);
+                        notifyDataSetChanged();
+                        return;
+                    }
+                }
+            }
             mMessages.add(0, message);
             notifyItemInserted(0);
+
         }
 
         @Override
@@ -284,7 +297,7 @@ public class MainActivity extends FragmentActivity {
 
     }
 
-    public class BuildingTask extends AsyncTask<Void, Void, BuildingResponse>{
+    public class BuildingTask extends AsyncTask<Void, Void, BuildingResponse> {
 
         String name;
 
@@ -300,10 +313,10 @@ public class MainActivity extends FragmentActivity {
         @Override
         protected void onPostExecute(BuildingResponse buildingResponse) {
             super.onPostExecute(buildingResponse);
-            Log.d(TAG, "Lat: " + buildingResponse.latitude);
-            Log.d(TAG, "Lon: " + buildingResponse.longitude);
+            Log.d(TAG, "Lat: " + buildingResponse.getLatitude());
+            Log.d(TAG, "Lon: " + buildingResponse.getLongitude());
             mChatAdapter.addMessage(new MapChatMessage("Bot",
-                    buildingResponse.latitude, buildingResponse.longitude));
+                    buildingResponse.getLatitude(), buildingResponse.getLongitude()));
         }
     }
 
