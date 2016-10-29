@@ -1,3 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="appId">33148aa9-5199-4704-89f3-a91e68bff944</string>
+    <string name="appKey">8dd0978101ba45b496273fdf065f91d3</string>
+    <string name="uwApiKey">090a967e00877402e083807b784a04d1</string>
 </resources>

@@ -1,5 +1,6 @@
 package com.watwarrior.watchatbot.ui;
 
+import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
@@ -19,11 +20,21 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.UiSettings;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.microsoft.cognitiveservices.luis.clientlibrary.LUISClient;
+import com.microsoft.cognitiveservices.luis.clientlibrary.LUISDialog;
+import com.microsoft.cognitiveservices.luis.clientlibrary.LUISEntity;
+import com.microsoft.cognitiveservices.luis.clientlibrary.LUISIntent;
+import com.microsoft.cognitiveservices.luis.clientlibrary.LUISResponse;
+import com.microsoft.cognitiveservices.luis.clientlibrary.LUISResponseHandler;
+import com.watwarrior.watchatbot.LUISIntentDictionary;
 import com.watwarrior.watchatbot.R;
 import com.watwarrior.watchatbot.models.AbstractChatMessage;
 import com.watwarrior.watchatbot.models.MapChatMessage;
 import com.watwarrior.watchatbot.models.TextChatMessage;
+import com.watwarrior.watchatbot.network.BuildingResponse;
+import com.watwarrior.watchatbot.network.NetworkHelper;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,16 +47,27 @@ public class MainActivity extends AppCompatActivity {
     private EditText mChatText;
     private Button mSendButton;
 
+    private LUISClient mLUISClient;
+    private LUISResponse previousResponse;
+
+    private NetworkHelper mNetworkHelper;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        setupDependencies();
 
         setUIReference();
 
         doDemo();
     }
 
+    private void setupDependencies() {
+        mLUISClient = new LUISClient(getString(R.string.appId), getString(R.string.appKey), false, false);
+        mNetworkHelper = new NetworkHelper(this);
+    }
 
     private void setUIReference() {
         mChatList = (RecyclerView) findViewById(R.id.chat_list);
@@ -65,10 +87,27 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 String message = mChatText.getText().toString();
-                if (!message.isEmpty()){
+                if (!message.isEmpty()) {
                     mChatText.setText("");
                     mChatAdapter.addMessage(new TextChatMessage("Me", message));
                     // TODO: 16/10/29 Network calls
+                    try {
+                        mLUISClient.predict(message, new LUISResponseHandler() {
+                            @Override
+                            public void onSuccess(LUISResponse response) {
+                                processResponse(response);
+                            }
+
+                            @Override
+                            public void onFailure(Exception e) {
+                                e.printStackTrace();
+                                mChatAdapter.addMessage(new TextChatMessage("Bot", "Sorry, my brain exploded."));
+                            }
+                        });
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        mChatAdapter.addMessage(new TextChatMessage("Bot", "Sorry, my brain exploded."));
+                    }
                 }
             }
         });
@@ -76,11 +115,41 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    private void doDemo(){
+    private void doDemo() {
         mChatAdapter.addMessage(new TextChatMessage("Me", "Hello!"));
         mChatAdapter.addMessage(new TextChatMessage("Bot", "Hi!"));
         mChatAdapter.addMessage(new TextChatMessage("Me", "Where is RCH?"));
         mChatAdapter.addMessage(new MapChatMessage("Bot", 43.47031155f, -80.54084139f));
+    }
+
+    public void processResponse(LUISResponse response) {
+        Log.d(TAG, "-------------------");
+        previousResponse = response;
+        Log.d(TAG, response.getQuery());
+        LUISIntent topIntent = response.getTopIntent();
+        Log.d(TAG, "Top Intent: " + topIntent.getName());
+        Log.d(TAG, "Entities:");
+        List<LUISEntity> entities = response.getEntities();
+        for (int i = 0; i < entities.size(); i++) {
+            Log.d(TAG, String.valueOf(i + 1) + " - " + entities.get(i).getName());
+        }
+        LUISDialog dialog = response.getDialog();
+        if (dialog != null) {
+            Log.d(TAG, "Dialog Status: " + dialog.getStatus());
+            if (!dialog.isFinished()) {
+                Log.d(TAG, "Dialog prompt: " + dialog.getPrompt());
+            }
+        }
+
+        if(topIntent.getName().equals(LUISIntentDictionary.INTENT_uWaterlooLocation)){
+            for (final LUISEntity entity: entities){
+                if (entity.getType().equals(LUISIntentDictionary.TYPE_location)){
+
+                    break;
+                }
+            }
+        }
+
     }
 
 
@@ -97,7 +166,6 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public ChatViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-            Log.d(TAG, "Create view holder");
             switch (viewType) {
                 case VIEW_TYPE_TEXT:
                     return new TextViewHolder(LayoutInflater.from(MainActivity.this)
@@ -111,7 +179,6 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void onBindViewHolder(ChatViewHolder holder, int position) {
-            Log.d(TAG, "Bind view holder");
             AbstractChatMessage message = mMessages.get(position);
             if (holder instanceof TextViewHolder) {
                 TextChatMessage textMessage = (TextChatMessage) message;
@@ -134,7 +201,7 @@ public class MainActivity extends AppCompatActivity {
 
         public void addMessage(AbstractChatMessage message) {
             mMessages.add(0, message);
-            notifyItemInserted(mMessages.size() - 1);
+            notifyDataSetChanged();
         }
 
         @Override
@@ -214,5 +281,20 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    public class BuildingTask extends AsyncTask<String, Void, BuildingResponse>{
+
+        @Override
+        protected BuildingResponse doInBackground(String... strings) {
+            return mNetworkHelper.getBuildingInfo(strings[0]);
+        }
+
+        @Override
+        protected void onPostExecute(BuildingResponse buildingResponse) {
+            super.onPostExecute(buildingResponse);
+            mChatAdapter.addMessage(new MapChatMessage("Bot",
+                    buildingResponse.latitude, buildingResponse.longitude));
+        }
+    }
 
 }
+

@@ -3,6 +3,8 @@ apply plugin: 'com.android.application'
 android {
 
     def staging = "\"https://api.projectoxford.ai/luis/v1/application?id=c413b2ef-382c-45bd-8ff0-f76d60e2a821&subscription-key=1d8c4b5de39944eea0dbef322202c269&q=\""
+    def newStaging = "\"https://api.projectoxford.ai/luis/v1/application?id=33148aa9-5199-4704-89f3-a91e68bff944&subscription-key=8dd0978101ba45b496273fdf065f91d3&q=\""
+
 
     compileSdkVersion 24
     buildToolsVersion "24.0.2"
@@ -16,10 +18,10 @@ android {
     }
     buildTypes {
         debug{
-            buildConfigField "String", "SERVER_URL", staging
+            buildConfigField "String", "SERVER_URL", newStaging
         }
         release {
-            buildConfigField "String", "SERVER_URL", staging
+            buildConfigField "String", "SERVER_URL", newStaging
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
