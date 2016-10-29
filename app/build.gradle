@@ -1,6 +1,9 @@
 apply plugin: 'com.android.application'
 
 android {
+
+    def staging = "\"https://api.projectoxford.ai/luis/v1/application?id=c413b2ef-382c-45bd-8ff0-f76d60e2a821&subscription-key=1d8c4b5de39944eea0dbef322202c269&q=\""
+
     compileSdkVersion 24
     buildToolsVersion "24.0.2"
     defaultConfig {
@@ -12,7 +15,11 @@ android {
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
+        debug{
+            buildConfigField "String", "SERVER_URL", staging
+        }
         release {
+            buildConfigField "String", "SERVER_URL", staging
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

@@ -50,10 +50,16 @@ public class MainActivity extends AppCompatActivity {
     private void setUIReference() {
         mChatList = (RecyclerView) findViewById(R.id.chat_list);
         mChatAdapter = new ChatAdapter();
-        mChatList.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false));
+        mChatList.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, true));
         mChatList.setAdapter(mChatAdapter);
 
         mChatText = (EditText) findViewById(R.id.chat_text_box);
+        mChatText.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                mChatList.scrollToPosition(mChatAdapter.mMessages.size() - 1);
+            }
+        });
         mSendButton = (Button) findViewById(R.id.chat_send);
         mSendButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -125,9 +131,8 @@ public class MainActivity extends AppCompatActivity {
         }
 
         public void addMessage(AbstractChatMessage message) {
-            mMessages.add(message);
-            notifyDataSetChanged();
-            Log.d(TAG, "Size: " + mMessages.size());
+            mMessages.add(0, message);
+            notifyItemInserted(mMessages.size() - 1);
         }
 
         @Override
