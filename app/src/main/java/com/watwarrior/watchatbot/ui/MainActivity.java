@@ -1,9 +1,13 @@
 package com.watwarrior.watchatbot.ui;
 
+import android.content.ActivityNotFoundException;
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.support.v4.app.FragmentActivity;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.speech.RecognizerIntent;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -12,7 +16,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -44,10 +50,13 @@ public class MainActivity extends FragmentActivity {
 
     private static final String TAG = MainActivity.class.getSimpleName();
 
+    protected static final int RESULT_SPEECH = 1;
+
     private RecyclerView mChatList;
     private ChatAdapter mChatAdapter;
     private EditText mChatText;
     private Button mSendButton;
+    private ImageView mVoiceBtn;
 
     private LUISClient mLUISClient;
     private LUISResponse previousResponse;
@@ -116,6 +125,24 @@ public class MainActivity extends FragmentActivity {
             }
         });
 
+        mVoiceBtn = (ImageView) findViewById(R.id.voice_btn);
+        mVoiceBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+                intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, "en-US");
+
+                try {
+                    startActivityForResult(intent, RESULT_SPEECH);
+                    mChatText.setText("");
+                } catch (ActivityNotFoundException a) {
+                    Toast t = Toast.makeText(getApplicationContext(),
+                            "Opps! Your device doesn't support Speech to Text.",
+                            Toast.LENGTH_SHORT);
+                    t.show();
+                }
+            }
+        });
 
     }
 
@@ -320,5 +347,20 @@ public class MainActivity extends FragmentActivity {
         }
     }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        switch (requestCode) {
+            case RESULT_SPEECH:
+                if (resultCode == RESULT_OK && data != null) {
+                    ArrayList<String> text = data
+                            .getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+
+                    mChatText.setText(text.get(0));
+                }
+                break;
+        }
+    }
 }
 
