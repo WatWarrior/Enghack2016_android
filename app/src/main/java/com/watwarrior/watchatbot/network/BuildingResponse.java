@@ -9,6 +9,8 @@ import com.google.gson.annotations.Expose;
 public class BuildingResponse {
     @Expose public String building_id;
     @Expose public String building_code;
+    @Expose public Object alternate_names;
     @Expose public float latitude;
     @Expose public float longitude;
+    @Expose public Object building_sections;
 }

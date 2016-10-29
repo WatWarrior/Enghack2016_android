@@ -1,7 +1,11 @@
 package com.watwarrior.watchatbot.network;
 
 import android.content.Context;
+import android.util.Log;
 
+import com.google.gson.ExclusionStrategy;
+import com.google.gson.FieldAttributes;
+import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.watwarrior.watchatbot.R;
 
@@ -28,9 +32,24 @@ public class NetworkHelper {
     private final Context mContext;
 
     public NetworkHelper(Context context) {
+        ExclusionStrategy metaExclusionStrategy = new ExclusionStrategy() {
+            @Override
+            public boolean shouldSkipField(FieldAttributes f) {
+                return f.getName().equals("meta");
+            }
+
+            @Override
+            public boolean shouldSkipClass(Class<?> clazz) {
+                return false;
+            }
+        };
+
+        Gson gson = new GsonBuilder().addDeserializationExclusionStrategy(metaExclusionStrategy)
+                .create();
+
         mRetrofit = new Retrofit.Builder()
                 .baseUrl(API_URL)
-                .addConverterFactory(GsonConverterFactory.create(new GsonBuilder().create()))
+                .addConverterFactory(GsonConverterFactory.create(gson))
                 .build();
         mApi = mRetrofit.create(Api.class);
         mContext = context;
@@ -43,7 +62,8 @@ public class NetworkHelper {
         BuildingResponse buildingResponse= null;
 
         try{
-            buildingResponse = buildingCall.execute().body();
+            Response<BuildingResponse> response = buildingCall.execute();
+            buildingResponse = response.body();
         } catch (IOException e) {
             e.printStackTrace();
         }

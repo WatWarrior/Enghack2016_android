@@ -1,6 +1,7 @@
 package com.watwarrior.watchatbot.ui;
 
 import android.os.AsyncTask;
+import android.support.v4.app.FragmentActivity;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
@@ -38,7 +39,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity {
+//public class MainActivity extends AppCompatActivity {
+public class MainActivity extends FragmentActivity {
 
     private static final String TAG = MainActivity.class.getSimpleName();
 
@@ -118,8 +120,8 @@ public class MainActivity extends AppCompatActivity {
     private void doDemo() {
         mChatAdapter.addMessage(new TextChatMessage("Me", "Hello!"));
         mChatAdapter.addMessage(new TextChatMessage("Bot", "Hi!"));
-        mChatAdapter.addMessage(new TextChatMessage("Me", "Where is RCH?"));
-        mChatAdapter.addMessage(new MapChatMessage("Bot", 43.47031155f, -80.54084139f));
+//        mChatAdapter.addMessage(new TextChatMessage("Me", "Where is RCH?"));
+//        mChatAdapter.addMessage(new MapChatMessage("Bot", 43.47031155f, -80.54084139f));
     }
 
     public void processResponse(LUISResponse response) {
@@ -144,7 +146,8 @@ public class MainActivity extends AppCompatActivity {
         if(topIntent.getName().equals(LUISIntentDictionary.INTENT_uWaterlooLocation)){
             for (final LUISEntity entity: entities){
                 if (entity.getType().equals(LUISIntentDictionary.TYPE_location)){
-
+                    BuildingTask task = new BuildingTask(entity.getName());
+                    task.execute();
                     break;
                 }
             }
@@ -169,10 +172,10 @@ public class MainActivity extends AppCompatActivity {
             switch (viewType) {
                 case VIEW_TYPE_TEXT:
                     return new TextViewHolder(LayoutInflater.from(MainActivity.this)
-                            .inflate(R.layout.chat_message_normal_text, parent, false));
+                            .inflate(R.layout.chat_message_normal_text, null, false));
                 case VIEW_TYPE_MAP:
                     return new MapViewHolder(LayoutInflater.from(MainActivity.this)
-                            .inflate(R.layout.chat_message_map, parent, false));
+                            .inflate(R.layout.chat_message_map, null, false));
             }
             return null;
         }
@@ -201,7 +204,7 @@ public class MainActivity extends AppCompatActivity {
 
         public void addMessage(AbstractChatMessage message) {
             mMessages.add(0, message);
-            notifyDataSetChanged();
+            notifyItemInserted(0);
         }
 
         @Override
@@ -281,16 +284,24 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    public class BuildingTask extends AsyncTask<String, Void, BuildingResponse>{
+    public class BuildingTask extends AsyncTask<Void, Void, BuildingResponse>{
+
+        String name;
+
+        public BuildingTask(String name) {
+            this.name = name.toUpperCase();
+        }
 
         @Override
-        protected BuildingResponse doInBackground(String... strings) {
-            return mNetworkHelper.getBuildingInfo(strings[0]);
+        protected BuildingResponse doInBackground(Void... voids) {
+            return mNetworkHelper.getBuildingInfo(name);
         }
 
         @Override
         protected void onPostExecute(BuildingResponse buildingResponse) {
             super.onPostExecute(buildingResponse);
+            Log.d(TAG, "Lat: " + buildingResponse.latitude);
+            Log.d(TAG, "Lon: " + buildingResponse.longitude);
             mChatAdapter.addMessage(new MapChatMessage("Bot",
                     buildingResponse.latitude, buildingResponse.longitude));
         }
