@@ -4,6 +4,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -27,6 +28,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
+
+    private static final String TAG = MainActivity.class.getSimpleName();
 
     private RecyclerView mChatList;
     private ChatAdapter mChatAdapter;
@@ -57,6 +60,7 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
                 String message = mChatText.getText().toString();
                 if (!message.isEmpty()){
+                    mChatText.setText("");
                     mChatAdapter.addMessage(new TextChatMessage("Me", message));
                     // TODO: 16/10/29 Network calls
                 }
@@ -85,6 +89,7 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public ChatViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            Log.d(TAG, "Create view holder");
             switch (viewType) {
                 case VIEW_TYPE_TEXT:
                     return new TextViewHolder(LayoutInflater.from(MainActivity.this)
@@ -98,6 +103,7 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void onBindViewHolder(ChatViewHolder holder, int position) {
+            Log.d(TAG, "Bind view holder");
             AbstractChatMessage message = mMessages.get(position);
             if (holder instanceof TextViewHolder) {
                 TextChatMessage textMessage = (TextChatMessage) message;
@@ -120,7 +126,8 @@ public class MainActivity extends AppCompatActivity {
 
         public void addMessage(AbstractChatMessage message) {
             mMessages.add(message);
-            notifyItemInserted(mMessages.size() - 1);
+            notifyDataSetChanged();
+            Log.d(TAG, "Size: " + mMessages.size());
         }
 
         @Override
@@ -151,14 +158,13 @@ public class MainActivity extends AppCompatActivity {
             private UiSettings mUiSettings;
             private float mLat;
             private float mLng;
-            private boolean isMapSet, isCoordinateReceived;
+            private boolean isCoordinateReceived;
 
             public MapViewHolder(View itemView) {
                 super(itemView);
                 user = (TextView) itemView.findViewById(R.id.chat_user);
                 SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.chat_map);
                 mapFragment.getMapAsync(this);
-                isMapSet = false;
                 isCoordinateReceived = false;
             }
 
@@ -168,7 +174,6 @@ public class MainActivity extends AppCompatActivity {
                     mMap.addMarker(new MarkerOptions()
                             .position(coordinates));
                     mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(coordinates, 16.0f));
-                    isMapSet = true;
                 } else {
                     mLat = lat;
                     mLng = lng;
@@ -186,7 +191,6 @@ public class MainActivity extends AppCompatActivity {
                     mMap.addMarker(new MarkerOptions()
                             .position(coordinates));
                     mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(coordinates, 16.0f));
-                    isMapSet = true;
                 }
 
                 mUiSettings = mMap.getUiSettings();
