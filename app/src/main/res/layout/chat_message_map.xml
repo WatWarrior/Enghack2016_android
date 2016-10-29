@@ -8,13 +8,14 @@
               android:layout_height="match_parent">
 
     <TextView
+        android:id="@+id/chat_user"
         android:textAppearance="@android:style/TextAppearance.DeviceDefault.Medium"
         android:text="User"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"/>
 
     <fragment
-        android:id="@+id/map"
+        android:id="@+id/chat_map"
         android:layout_marginTop="4dp"
         android:name="com.google.android.gms.maps.SupportMapFragment"
         android:layout_width="match_parent"
